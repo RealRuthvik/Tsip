@@ -108,7 +108,7 @@ footer {
 /* --- MOBILE MENU --- */
 #mobile-menu-btn { display: none; }
 
-@media (max-width: 768px) {
+@media (max-width: 950px) {
     header { position: relative; }
 
     #mobile-menu-btn {
@@ -170,4 +170,72 @@ footer {
 #theme-toggle:active {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0px var(--border-color);
+}
+
+/* --- SEARCH BAR STYLES --- */
+
+/* Wrapper to make the search bar take up available space */
+.search-wrapper {
+    flex-grow: 1;
+    margin: 0 2rem; /* Space between logo and nav */
+    display: flex;
+    justify-content: center;
+    max-width: 600px; /* Prevents it from getting too wide on huge screens */
+}
+
+#search-form {
+    width: 100%;
+    display: flex;
+    gap: 8px; /* Space between input and button */
+}
+
+/* Retro Input Field */
+#search-input {
+    width: 100%;
+    padding: 10px 15px;
+    font-family: inherit;
+    font-weight: bold;
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-card);
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1); /* Subtle shadow */
+    outline: none;
+    transition: box-shadow 0.1s;
+}
+
+#search-input:focus {
+    box-shadow: 4px 4px 0px var(--accent-blue); /* Highlights on focus */
+}
+
+/* Retro Search Button */
+#search-btn {
+    background-color: var(--accent-green);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 15px;
+    box-shadow: 4px 4px 0px var(--border-color);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#search-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px var(--border-color);
+}
+
+/* --- MOBILE ADJUSTMENTS --- */
+@media (max-width: 768px) {
+    /* Hide the long search bar in the header on mobile to save space */
+    /* It will move into the dropdown menu via JS or CSS logic if preferred */
+    .search-wrapper {
+        display: none; 
+    }
+    
+    /* If you want the search bar INSIDE the mobile menu */
+    #main-nav .search-wrapper {
+        display: block;
+        margin: 15px auto;
+        width: 85%;
+    }
 }
