@@ -57,7 +57,7 @@ function triggerSearchError(inputElement) {
     inputElement.value = '';
     
     // 2. Change placeholder to error message
-    inputElement.setAttribute('placeholder', 'No tea found! 💅');
+    inputElement.setAttribute('placeholder', 'No such article found :(');
 
     // 4. Reset after 2 seconds
     setTimeout(() => {

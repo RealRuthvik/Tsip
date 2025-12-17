@@ -1,62 +1,23 @@
 [
   {
     "id": 1,
-    "title": "BREAKING: THE INTERNET IS MELTING DOWN OVER THIS DRESS 👗😱",
-    "excerpt": "Is it blue? Is it gold? Or is it actually hideous? We investigate.",
-    "category": "DRAMA",
-    "image": "dress.jpg",
-    "link": "/articles/2025/dress-drama.html",
+    "title": "The 2025 Meme Rewind: The 12 Viral Moments That Defined the Year",
+    "excerpt": "The definitive ranking of 2025's best memes. From the '6-7' trend and Steve the Fish to the Coldplay Kiss Cam, explore the 12 viral moments that broke the internet this year.",
+    "category": "Memes",
+    "image": "six-seven-67.gif",
+    "link": "/articles/2025/the-2025-meme-rewind-the-12-viral-moments-that-defined-the-year.html",
     "isFeatured": true,
-    "date": "2025-10-12"
+    "date": "2025-12-31",
+    "author": "Ruthvik Reddy"
   },
   {
     "id": 2,
-    "title": "Celeb Couple Splits?!",
-    "excerpt": "Insiders say they unfollowed each other. It's basically confirmed.",
-    "category": "RECEIPTS",
+    "title": "Rumor: Half Life 3 with the 2026 Steam Machine Launch?",
+    "excerpt": "Reports indicate Valve aims to bundle the long-awaited sequel, possibly titled Half-Life: Xen, with a next-gen console in 2026. However, since volatile RAM prices are driving up manufacturing costs, which could delay the hardware and the game.",
+    "category": "Video Games",
     "image": "split.jpg",
     "link": "/articles/2025/celeb-split.html",
     "isFeatured": false,
-    "date": "2025-10-11"
-  },
-  {
-    "id": 3,
-    "title": "The New Meme Format",
-    "excerpt": "This cat is literally everyone on a Monday morning.",
-    "category": "MEMES",
-    "image": "cat.jpg",
-    "link": "/articles/2025/cat-meme.html",
-    "isFeatured": false,
-    "date": "2025-10-10"
-  },
-  {
-    "id": 4,
-    "title": "Who Wore It Worse?",
-    "excerpt": "The fashion gala was a disaster. Let's judge them mercilessly.",
-    "category": "DRAMA",
-    "image": "carpet.jpg",
-    "link": "/articles/2025/fashion-fail.html",
-    "isFeatured": false,
-    "date": "2025-10-09"
-  },
-  {
-    "id": 5,
-    "title": "The New Meme Format",
-    "excerpt": "This cat is literally everyone on a Monday morning.",
-    "category": "MEMES",
-    "image": "cat.jpg",
-    "link": "/articles/2025/cat-meme.html",
-    "isFeatured": false,
-    "date": "2025-10-10"
-  },
-  {
-    "id": 6,
-    "title": "Who Wore It Worse?",
-    "excerpt": "The fashion gala was a disaster. Let's judge them mercilessly.",
-    "category": "RECEIPTS",
-    "image": "carpet.jpg",
-    "link": "/articles/2025/fashion-fail.html",
-    "isFeatured": false,
-    "date": "2025-10-09"
+    "date": "12-20-2025"
   }
 ]
