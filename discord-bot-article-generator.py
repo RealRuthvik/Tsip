@@ -7,7 +7,7 @@ from datetime import datetime
 import re
 
 # ================= CONFIGURATION =================
-# SECURITY WARNING: Never share your token publicly.
+# SECURITY WARNING: Never share your token.
 TOKEN = "" 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, 'data', 'articles.json')
@@ -28,6 +28,15 @@ def slugify(text):
     """Converts 'Hello World!' to 'hello-world'"""
     text = text.lower()
     return re.sub(r'[^a-z0-9]+', '-', text).strip('-')
+
+def extract_youtube_id(url):
+    """Extracts the 11-character video ID from a YouTube URL."""
+    # Matches "v=" or standard slash paths (e.g. youtu.be/ID)
+    regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+    match = re.search(regex, url)
+    if match:
+        return match.group(1)
+    return None
 
 def generate_html_file(article_data):
     """Generates the HTML string and saves it to a file."""
@@ -364,12 +373,30 @@ def generate_html_file(article_data):
             # Make the text a link
             source_display = f'<a href="{item["source_link"]}" target="_blank">{item["source"]}</a>'
 
+        # HANDLE MEDIA TYPE (Image vs YouTube)
+        media_html = ""
+        media_type = item.get('media_type', 'image') # Default to image for backward compatibility
+
+        if media_type == 'youtube':
+            # Embed YouTube Iframe
+            media_html = f"""
+                <iframe width="100%" height="100%" src="https://www.youtube.com/embed/{item['media_content']}" 
+                title="YouTube video player" frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen></iframe>
+            """
+        else:
+            # Default Image Tag
+            media_html = f"""
+                <img src="/media/image/{item['media_content']}" alt="{item['heading']}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+            """
+
         html += f"""
                 <div class="meme-entry" id="meme-{i}">
-                    <h2>#{item['heading']}</h2>
+                    <h2>{item['heading']}</h2>
                     <div class="main-image-container">
                         <div class="main-image-wrapper list-image" style="width: {width}px; height: {height}px; margin: 0; border: 5px solid #000;">
-                            <img src="/media/image/{item['image']}" alt="{item['heading']}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            {media_html}
                         </div>
                         <div class="image-caption">Source: {source_display}</div>
                     </div>
@@ -474,7 +501,7 @@ async def post(ctx):
         await ctx.send("Featured image saved successfully.")
 
         # --- STEP 5: IMAGE COUNT ---
-        await ctx.send("Please enter the number of list items (images) to include.")
+        await ctx.send("Please enter the number of list items (media items) to include.")
         msg = await bot.wait_for('message', check=check, timeout=120.0)
         try:
             num_images = int(msg.content)
@@ -503,8 +530,16 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=120.0)
             source_link = msg.content
 
-            # --- Ask for Image Dimensions ---
-            await ctx.send(f"Please enter the **Width** for image {i} in pixels (e.g., 500).")
+            # --- ASK MEDIA TYPE ---
+            await ctx.send(f"Is Item {i} an **Image** or a **YouTube** video? (Type 'image' or 'youtube')")
+            msg = await bot.wait_for('message', check=check, timeout=60.0)
+            media_choice = msg.content.lower()
+            
+            media_type = "image"
+            media_content = ""
+
+            # --- Ask for Dimensions (Required for both types to set container size) ---
+            await ctx.send(f"Please enter the **Width** for item {i} in pixels (e.g., 500).")
             msg = await bot.wait_for('message', check=check, timeout=60.0)
             try:
                 img_width = int(msg.content)
@@ -512,36 +547,58 @@ async def post(ctx):
                 await ctx.send("Invalid input. Defaulting width to 500.")
                 img_width = 500
 
-            await ctx.send(f"Please enter the **Height** for image {i} in pixels (e.g., 500).")
+            await ctx.send(f"Please enter the **Height** for item {i} in pixels (e.g., 500).")
             msg = await bot.wait_for('message', check=check, timeout=60.0)
             try:
                 img_height = int(msg.content)
             except ValueError:
                 await ctx.send("Invalid input. Defaulting height to 500.")
                 img_height = 500
-            # --------------------------------
 
-            await ctx.send(f"Please upload the **Image** for item {i}.")
-            msg = await bot.wait_for('message', check=check, timeout=120.0)
+            # --- HANDLE MEDIA INPUT ---
+            if "youtube" in media_choice:
+                media_type = "youtube"
+                await ctx.send(f"Please paste the **YouTube Link** for item {i}.")
+                msg = await bot.wait_for('message', check=check, timeout=120.0)
+                youtube_url = msg.content
+                
+                # Extract ID
+                vid_id = extract_youtube_id(youtube_url)
+                if vid_id:
+                    media_content = vid_id
+                    await ctx.send("YouTube video ID identified.")
+                else:
+                    await ctx.send("Could not identify YouTube ID. Item will be broken.")
+                    media_content = "INVALID_ID"
 
-            if not msg.attachments:
-                await ctx.send("No attachment detected. Skipping this item.")
-                continue
+            else:
+                # Default to Image Upload
+                media_type = "image"
+                await ctx.send(f"Please upload the **Image** for item {i}.")
+                msg = await bot.wait_for('message', check=check, timeout=120.0)
 
-            # Save List Item Image
-            attachment = msg.attachments[0]
-            file_ext = attachment.filename.split('.')[-1]
-            safe_filename = f"{slugify(heading)}-{i}.{file_ext}"
-            save_path = os.path.join(IMAGE_DIR, safe_filename)
-            await attachment.save(save_path)
+                if not msg.attachments:
+                    await ctx.send("No attachment detected. Skipping this item.")
+                    continue
 
-            # Store ONLY filename in JSON as requested
+                # Save List Item Image
+                attachment = msg.attachments[0]
+                file_ext = attachment.filename.split('.')[-1]
+                safe_filename = f"{slugify(heading)}-{i}.{file_ext}"
+                save_path = os.path.join(IMAGE_DIR, safe_filename)
+                await attachment.save(save_path)
+                media_content = safe_filename
+            
+            # Store Data
             content_list.append({
                 "heading": heading,
                 "text": text,
                 "source": source,
-                "source_link": source_link, # New Field
-                "image": safe_filename,
+                "source_link": source_link,
+                "media_type": media_type,     # 'image' or 'youtube'
+                "media_content": media_content, # filename or youtube_id
+                # Kept 'image' key for potential legacy compatibility, pointing to media_content
+                "image": media_content, 
                 "width": img_width,
                 "height": img_height
             })
@@ -575,7 +632,7 @@ async def post(ctx):
             "category": category,
             "author": author,
             "quote": quote_text,
-            "quote_author": quote_author, # New Field
+            "quote_author": quote_author,
             "authors_note": authors_note_text,
             "date": datetime.now().strftime("%Y-%m-%d"),
             "image": featured_filename, 

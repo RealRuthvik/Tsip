@@ -32,5 +32,32 @@
                 "height": 500
             }
         ]
+    },
+    {
+        "id": 3,
+        "title": "The 6:17 Tragedy: How SkyCrab1 Lost the Greatest Minecraft Run Ever",
+        "excerpt": "One accidental glance cost a runner a legendary sub 6:30 finish and the most dominant world record in history. Biggest Choke in speedrunning history.",
+        "category": "Video Games",
+        "author": "Ruthvik Reddy",
+        "quote": "This is the most depressing thing ive ever seen in my life",
+        "quote_author": "@parencolonthree from YouTube",
+        "authors_note": "This speedrun is very depressing to watch. Huge congratulations to Skycrab1 for achieving this run even if it did not end his way.",
+        "date": "2025-12-17",
+        "image": "featured-the-6-17-tragedy-how-skycrab1-lost-the-greatest-minecraft-run-ever.jpg",
+        "link": "/articles/2025/the-6-17-tragedy-how-skycrab1-lost-the-greatest-minecraft-run-ever.html",
+        "isFeatured": false,
+        "content": [
+            {
+                "heading": "Skycrab1's 6:17 Speedrunning Choke",
+                "text": "SkyCrab1 was on track for a historic breakthrough, utilizing an exceptional seed with a Looting 3 diamond sword to achieve lightning fast splits. Entering the Stronghold twenty seconds ahead of the world record pace, he was set to shatter the standing record by forty-seven seconds. A completion would have effectively killed the category, setting a sub 6:30 time so perfect it would discourage future competition by making the top spot seem unreachable. However, his blistering pace left him without defensive blocks for the Ender Dragon fight. While crafting items for his bed cycles, he accidentally looked at an Enderman for a fraction of a second. Though he managed to slay the dragon, the aggroed Enderman struck him down in the fountain at the final moment, transforming a world record into the most devastating choke the community has ever seen.",
+                "source": "Youtube",
+                "source_link": "https://youtu.be/grCoQjLdLb4?si=g0sxrt-I6t7rGs1K",
+                "media_type": "youtube",
+                "media_content": "grCoQjLdLb4",
+                "image": "grCoQjLdLb4",
+                "width": 540,
+                "height": 300
+            }
+        ]
     }
 ]
