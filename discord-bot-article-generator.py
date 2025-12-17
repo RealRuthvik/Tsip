@@ -36,9 +36,19 @@ def generate_html_file(article_data):
     
     quote_html = ""
     if article_data.get('quote'):
+        # Prepare author attribution if it exists
+        author_html = ""
+        if article_data.get('quote_author'):
+            author_html = f"""
+                <cite style="display: block; text-align: right; font-size: 1rem; margin-top: 15px; font-style: normal; opacity: 0.8;">
+                    — {article_data['quote_author']}
+                </cite>
+            """
+        
         quote_html = f"""
                 <blockquote>
                     "{article_data['quote']}"
+                    {author_html}
                 </blockquote>
         """
 
@@ -71,16 +81,13 @@ def generate_html_file(article_data):
 
         .article-container {{
             background-color: var(--bg-card);
-            /* Cream/White */
             border: 4px solid var(--border-color);
             padding: 3rem;
             max-width: 800px;
             width: 100%;
             margin-top: 20px;
-            /* THE BIG POP: Deep Purple Hard Shadow */
             box-shadow: 15px 15px 0px var(--accent-purple);
             position: relative;
-            /* Ensure images don't overflow the rounded corners or borders */
             box-sizing: border-box;
         }}
 
@@ -92,7 +99,7 @@ def generate_html_file(article_data):
             color: var(--text-dark);
             text-transform: uppercase;
             text-shadow: 3px 3px 0px var(--bg-header);
-            word-wrap: break-word; /* Prevents long words from breaking layout */
+            word-wrap: break-word;
         }}
 
         .meta-wrapper {{
@@ -106,7 +113,6 @@ def generate_html_file(article_data):
 
         .meta-tag {{
             background-color: var(--bg-main);
-            /* Yellow */
             border: 2px solid var(--border-color);
             padding: 5px 15px;
             font-weight: 900;
@@ -117,12 +123,10 @@ def generate_html_file(article_data):
         .meta-tag:nth-child(even) {{
             transform: rotate(2deg);
             background-color: var(--accent-blue);
-            /* Blue */
         }}
 
         .meta-tag:nth-child(3) {{
             background-color: var(--accent-red);
-            /* Red */
             color: white;
         }}
 
@@ -153,7 +157,7 @@ def generate_html_file(article_data):
             font-weight: bold;
             border: 4px solid var(--border-color);
             text-transform: uppercase;
-            box-sizing: border-box; /* Ensures border doesn't add to width */
+            box-sizing: border-box;
         }}
 
         .image-caption {{
@@ -166,7 +170,7 @@ def generate_html_file(article_data):
             margin-top: -10px;
             position: relative;
             z-index: 2;
-            max-width: 100%; /* Prevents caption from overflowing */
+            max-width: 100%;
         }}
 
         /* LINK FIX */
@@ -201,7 +205,6 @@ def generate_html_file(article_data):
 
         blockquote {{
             background-color: var(--bg-header);
-            /* Pink */
             color: var(--text-dark);
             border: 4px solid var(--border-color);
             margin: 40px 0;
@@ -294,15 +297,12 @@ def generate_html_file(article_data):
         }}
 
         /* =========================================
-           MOBILE OPTIMIZATION (THE FIX)
+           MOBILE OPTIMIZATION
            ========================================= */
         @media(max-width: 600px) {{
             .article-container {{
                 padding: 1.5rem;
-                /* Smaller padding */
-                box-shadow: 8px 8px 0px var(--accent-purple);
                 width: 95%;
-                /* Ensure it fits in viewport */
                 margin-left: auto;
                 margin-right: auto;
             }}
@@ -321,19 +321,14 @@ def generate_html_file(article_data):
                 padding: 5px 10px;
             }}
 
-            /* --- THE IMAGE FIX --- */
-            /* This overrides the inline styles you set in HTML */
             .main-image-wrapper {{
                 width: 100% !important;
-                /* Forces full width of phone screen */
                 height: auto !important;
-                /* Unlocks fixed height so it doesn't stretch */
                 margin-left: 0 !important;
                 margin-right: 0 !important;
                 aspect-ratio: auto !important;
             }}
 
-            /* Ensure image fills the container */
             .main-image-wrapper img {{
                 width: 100% !important;
                 height: auto !important;
@@ -359,20 +354,24 @@ def generate_html_file(article_data):
     """
 
     # Add Dynamic Content (The Images/List Items)
-    # NOTE: prepending /media/image/ here because JSON only has filename
     for i, item in enumerate(article_data['content'], 1):
-        # Get dimensions, defaulting to 500 if missing (for backward compatibility)
         width = item.get('width', 500)
         height = item.get('height', 500)
+        
+        # Handle Source Link logic
+        source_display = item['source']
+        if item.get('source_link'):
+            # Make the text a link
+            source_display = f'<a href="{item["source_link"]}" target="_blank">{item["source"]}</a>'
 
         html += f"""
                 <div class="meme-entry" id="meme-{i}">
-                    <h2>#{i} {item['heading']}</h2>
+                    <h2>#{item['heading']}</h2>
                     <div class="main-image-container">
                         <div class="main-image-wrapper list-image" style="width: {width}px; height: {height}px; margin: 0; border: 5px solid #000;">
                             <img src="/media/image/{item['image']}" alt="{item['heading']}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </div>
-                        <div class="image-caption">Source: {item['source']}</div>
+                        <div class="image-caption">Source: {source_display}</div>
                     </div>
                     <p>{item['text']}</p>
                 </div>
@@ -382,7 +381,7 @@ def generate_html_file(article_data):
     html += f"""
                 {authors_note_html}
 
-                <div class="back-container"><a href="/index.html" class="back-btn">Back Home</a></div>
+                <div class="back-container"><a href="/index.html" class="back-btn">⬅ Back Home</a></div>
             </div>
         </article>
     </main>
@@ -431,12 +430,18 @@ async def post(ctx):
         # --- STEP 2: OPTIONAL BOXES ---
         
         quote_text = ""
+        quote_author = ""
         await ctx.send("Do you wish to include a **Quote Box**? (Yes/No)")
         msg = await bot.wait_for('message', check=check, timeout=60.0)
         if msg.content.lower() in ['yes', 'y']:
             await ctx.send("Please enter the content for the quote.")
             msg = await bot.wait_for('message', check=check, timeout=120.0)
             quote_text = msg.content
+            
+            # ASK FOR QUOTE ATTRIBUTION
+            await ctx.send("Who is this quote by? (e.g., @randomuser from Twitter)")
+            msg = await bot.wait_for('message', check=check, timeout=120.0)
+            quote_author = msg.content
 
         authors_note_text = ""
         await ctx.send("Do you wish to include an **Author's Note** at the end? (Yes/No)")
@@ -489,9 +494,14 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=300.0)
             text = msg.content
 
-            await ctx.send("Please enter the **Image Source** (e.g., specific website or photographer).")
+            await ctx.send("Please enter the **Image Source Name** (e.g., 'NY Times' or 'John Doe').")
             msg = await bot.wait_for('message', check=check, timeout=60.0)
             source = msg.content
+            
+            # ASK FOR SOURCE LINK
+            await ctx.send("Please enter the **Link (URL)** for the source.")
+            msg = await bot.wait_for('message', check=check, timeout=120.0)
+            source_link = msg.content
 
             # --- Ask for Image Dimensions ---
             await ctx.send(f"Please enter the **Width** for image {i} in pixels (e.g., 500).")
@@ -530,9 +540,10 @@ async def post(ctx):
                 "heading": heading,
                 "text": text,
                 "source": source,
+                "source_link": source_link, # New Field
                 "image": safe_filename,
-                "width": img_width,  # Store width
-                "height": img_height # Store height
+                "width": img_width,
+                "height": img_height
             })
             
             await ctx.send("Item saved.")
@@ -541,7 +552,6 @@ async def post(ctx):
         current_year = datetime.now().year
         slug = slugify(title)
         
-        # Load existing articles
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, 'r', encoding='utf-8') as f:
                 articles = json.load(f)
@@ -549,7 +559,6 @@ async def post(ctx):
             articles = []
 
         # LOGIC TO TOGGLE FEATURED STATUS
-        # If the user selected Yes (is_featured = True), we must un-feature all others
         if is_featured:
             for art in articles:
                 if art.get('isFeatured', False):
@@ -565,12 +574,13 @@ async def post(ctx):
             "excerpt": excerpt,
             "category": category,
             "author": author,
-            "quote": quote_text,   
+            "quote": quote_text,
+            "quote_author": quote_author, # New Field
             "authors_note": authors_note_text,
             "date": datetime.now().strftime("%Y-%m-%d"),
             "image": featured_filename, 
             "link": f"/articles/{current_year}/{slug}.html",
-            "isFeatured": is_featured, # Uses the user's choice
+            "isFeatured": is_featured,
             "content": content_list
         }
 

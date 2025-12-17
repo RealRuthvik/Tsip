@@ -9,5 +9,28 @@
         "isFeatured": true,
         "date": "2025-12-31",
         "author": "Ruthvik Reddy"
+    },
+    {
+        "id": 2,
+        "title": "Rumor: Half-Life 3 Eyed as 2026 Steam Machine Launch Title",
+        "excerpt": "Reports indicate Valve aims to bundle the long-awaited sequel possibly titled Half-Life: Xen with a next gen console in 2026.",
+        "category": "Video Games",
+        "author": "Ruthvik Reddy",
+        "quote": "Fresh reports suggest the decades long wait for Gordon Freeman's return may finally target a 2026 release window.",
+        "authors_note": "These are still rumours. Valve has not confirmed these claims. We keep the hopium pumping.",
+        "date": "2025-12-17",
+        "image": "featured-rumor-half-life-3-eyed-as-2026-steam-machine-launch-title.jpg",
+        "link": "/articles/2025/rumor-half-life-3-eyed-as-2026-steam-machine-launch-title.html",
+        "isFeatured": false,
+        "content": [
+            {
+                "heading": "Half-Life",
+                "text": "Poster for the game Half-Life.",
+                "source": "Steam",
+                "image": "half-life-1.jpg",
+                "width": 500,
+                "height": 500
+            }
+        ]
     }
 ]
