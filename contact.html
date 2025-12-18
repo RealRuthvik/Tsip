@@ -222,34 +222,52 @@
             e.preventDefault();
 
             const formData = new FormData(e.target);
-            const data = {
-                reason: formData.get('reason'),
-                summary: formData.get('summary'),
-                details: formData.get('details'),
-                anonymous: formData.get('anonymous') === 'on',
-                name: formData.get('name'),
-                email: formData.get('email'),
-                submitted_at: new Date().toLocaleString()
+            const name = formData.get('name');
+            const email = formData.get('email');
+            const reason = formData.get('reason');
+            const summary = formData.get('summary');
+            const details = formData.get('details');
+            const anonymous = formData.get('anonymous') === 'on';
+
+            const discordPayload = {
+                username: "Arcade Contact Form",
+                embeds: [{
+                    title: "New Contact Form Submission",
+                    fields: [
+                        { name: "Reason", value: reason, inline: true },
+                        { name: "Real Name", value: name, inline: true },
+                        { name: "Email", value: email, inline: false },
+                        {
+                            name: "Anonymity",
+                            value: anonymous ? "Yes" : "No",
+                            inline: false
+                        },
+
+                        { name: "Summary", value: summary, inline: false },
+                        { name: "Details", value: details }
+                    ],
+                    footer: { text: "Submitted at " + new Date().toLocaleString() }
+                }]
             };
 
+            const webhookUrl = "";
+
             try {
-                const response = await fetch('http://127.0.0.1:5000/submit-contact', {
+                const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(discordPayload)
                 });
 
-                const result = await response.json();
-
                 if (response.ok) {
-                    alert('You have successfully submitted the contact form. Thank you!');
+                    alert('Message sent to Discord successfully!');
                     e.target.reset();
                 } else {
-                    alert('Error: ' + result.message);
+                    alert('Error sending message. Discord might be blocking the request.');
                 }
             } catch (error) {
-                console.error('Connection Error:', error);
-                alert('Could not connect to the backend. Please try again later or send an email to TheInternetArcade@gmail.com');
+                console.error('Error:', error);
+                alert('Failed to send message.');
             }
         });
     </script>
