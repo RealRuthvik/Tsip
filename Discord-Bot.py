@@ -6,32 +6,23 @@ import asyncio
 from datetime import datetime
 import re
 
-# ================= CONFIGURATION =================
-# SECURITY WARNING: Never share your token.
-TOKEN = "" 
+_bot_auth_ = "" 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, 'data', 'articles.json')
 IMAGE_DIR = os.path.join(BASE_DIR, 'media', 'image')
 
-# Ensure directories exist
 os.makedirs(IMAGE_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
 
-# Discord Bot Setup
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ================= HELPER FUNCTIONS =================
-
 def slugify(text):
-    """Converts 'Hello World!' to 'hello-world'"""
     text = text.lower()
     return re.sub(r'[^a-z0-9]+', '-', text).strip('-')
 
 def extract_youtube_id(url):
-    """Extracts the 11-character video ID from a YouTube URL."""
-    # Matches "v=" or standard slash paths (e.g. youtu.be/ID)
     regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
     match = re.search(regex, url)
     if match:
@@ -39,13 +30,8 @@ def extract_youtube_id(url):
     return None
 
 def generate_html_file(article_data):
-    """Generates the HTML string and saves it to a file."""
-    
-    # 1. PREPARE OPTIONAL HTML SNIPPETS
-    
     quote_html = ""
     if article_data.get('quote'):
-        # Prepare author attribution if it exists
         author_html = ""
         if article_data.get('quote_author'):
             author_html = f"""
@@ -70,7 +56,6 @@ def generate_html_file(article_data):
                 </div>
         """
 
-    # 2. GENERATE FULL HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,8 +65,6 @@ def generate_html_file(article_data):
     <link rel="stylesheet" href="/css/style.css">
     
     <style>
-        /* --- ARTICLE SPECIFIC "POP" STYLES --- */
-
         main {{
             display: flex;
             justify-content: center;
@@ -100,7 +83,6 @@ def generate_html_file(article_data):
             box-sizing: border-box;
         }}
 
-        /* --- HEADER SECTION --- */
         h1 {{
             font-size: 3rem;
             line-height: 1;
@@ -139,7 +121,6 @@ def generate_html_file(article_data):
             color: white;
         }}
 
-        /* --- IMAGE SECTION --- */
         .main-image-container {{
             margin-bottom: 40px;
             position: relative;
@@ -182,7 +163,6 @@ def generate_html_file(article_data):
             max-width: 100%;
         }}
 
-        /* LINK FIX */
         .image-caption a {{
             color: inherit;
             text-decoration: none;
@@ -195,7 +175,6 @@ def generate_html_file(article_data):
             border-bottom: 1px solid white;
         }}
 
-        /* --- CONTENT TYPOGRAPHY --- */
         .article-body p {{
             font-family: 'Helvetica Neue', Arial, sans-serif;
             font-size: 1.15rem;
@@ -237,8 +216,6 @@ def generate_html_file(article_data):
             font-family: serif;
         }}
 
-        /* --- NEW STYLES FOR LISTICLE FORMAT --- */
-
         .meme-entry {{
             margin-bottom: 50px;
             padding-bottom: 30px;
@@ -259,7 +236,6 @@ def generate_html_file(article_data):
             transform: rotate(-1deg);
         }}
 
-        /* --- AUTHORS NOTE BOX --- */
         .authors-note-box {{
             background-color: var(--accent-green);
             border: 4px solid var(--border-color);
@@ -279,7 +255,6 @@ def generate_html_file(article_data):
             text-decoration-thickness: 3px;
         }}
 
-        /* --- BACK BUTTON --- */
         .back-container {{
             text-align: center;
             margin-top: 40px;
@@ -305,9 +280,6 @@ def generate_html_file(article_data):
             box-shadow: 5px 5px 0px var(--border-color);
         }}
 
-        /* =========================================
-           MOBILE OPTIMIZATION
-           ========================================= */
         @media(max-width: 600px) {{
             .article-container {{
                 padding: 1.5rem;
@@ -352,9 +324,9 @@ def generate_html_file(article_data):
         <article class="article-container">
             <h1>{article_data['title']}</h1>
             <div class="meta-wrapper">
-                <div class="meta-tag">DATE: {article_data['date']}</div>
-                <div class="meta-tag">AUTHOR: {article_data['author']}</div>
-                <div class="meta-tag">MOOD: {article_data['category']}</div>
+                <div class="meta-tag" id="meta-date">DATE: Loading...</div>
+                <div class="meta-tag" id="meta-author">AUTHOR: Loading...</div>
+                <div class="meta-tag" id="meta-mood">Category: Loading...</div>
             </div>
             <div class="article-body">
                 <p>{article_data['excerpt']}</p>
@@ -362,23 +334,18 @@ def generate_html_file(article_data):
                 {quote_html}
     """
 
-    # Add Dynamic Content (The Images/List Items)
     for i, item in enumerate(article_data['content'], 1):
         width = item.get('width', 500)
         height = item.get('height', 500)
         
-        # Handle Source Link logic
         source_display = item['source']
         if item.get('source_link'):
-            # Make the text a link
             source_display = f'<a href="{item["source_link"]}" target="_blank">{item["source"]}</a>'
 
-        # HANDLE MEDIA TYPE (Image vs YouTube)
         media_html = ""
-        media_type = item.get('media_type', 'image') # Default to image for backward compatibility
+        media_type = item.get('media_type', 'image')
 
         if media_type == 'youtube':
-            # Embed YouTube Iframe
             media_html = f"""
                 <iframe width="100%" height="100%" src="https://www.youtube.com/embed/{item['media_content']}" 
                 title="YouTube video player" frameborder="0" 
@@ -386,7 +353,6 @@ def generate_html_file(article_data):
                 allowfullscreen></iframe>
             """
         else:
-            # Default Image Tag
             media_html = f"""
                 <img src="/media/image/{item['media_content']}" alt="{item['heading']}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             """
@@ -404,7 +370,6 @@ def generate_html_file(article_data):
                 </div>
         """
 
-    # Add Author's Note and Footer
     html += f"""
                 {authors_note_html}
 
@@ -414,11 +379,11 @@ def generate_html_file(article_data):
     </main>
     <div id="footer-placeholder"></div>
     <script src="/js/global.js"></script>
+    <script src="/js/article.js"></script>
 </body>
 </html>
     """
 
-    # Determine Path and Save
     relative_path = article_data['link'].lstrip('/')
     full_path = os.path.join(BASE_DIR, relative_path)
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -427,17 +392,13 @@ def generate_html_file(article_data):
         f.write(html)
     
     return full_path
-# ================= THE BOT COMMAND =================
 
 @bot.command()
 async def post(ctx):
-    """Interactive wizard to create a full article with professional tone."""
-    
     def check(m):
         return m.author == ctx.author and m.channel == ctx.channel
 
     try:
-        # --- STEP 1: GENERAL METADATA ---
         await ctx.send("Initiating article creation process. Please enter the article **Headline**.")
         msg = await bot.wait_for('message', check=check, timeout=120.0)
         title = msg.content
@@ -454,8 +415,6 @@ async def post(ctx):
         msg = await bot.wait_for('message', check=check, timeout=120.0)
         category = msg.content
 
-        # --- STEP 2: OPTIONAL BOXES ---
-        
         quote_text = ""
         quote_author = ""
         await ctx.send("Do you wish to include a **Quote Box**? (Yes/No)")
@@ -465,7 +424,6 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=120.0)
             quote_text = msg.content
             
-            # ASK FOR QUOTE ATTRIBUTION
             await ctx.send("Who is this quote by? (e.g., @randomuser from Twitter)")
             msg = await bot.wait_for('message', check=check, timeout=120.0)
             quote_author = msg.content
@@ -478,12 +436,10 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=120.0)
             authors_note_text = msg.content
 
-        # --- STEP 3: IS FEATURED CHECK ---
         await ctx.send("Is this a **Featured Article**? (Yes/No)\n*Note: Answering 'Yes' will remove 'Featured' status from any existing article.*")
         msg = await bot.wait_for('message', check=check, timeout=60.0)
         is_featured = msg.content.lower() in ['yes', 'y']
 
-        # --- STEP 4: FEATURED IMAGE (MAIN) ---
         await ctx.send("Please upload the **Featured Image** for the article thumbnail (to be stored in JSON).")
         msg = await bot.wait_for('message', check=check, timeout=120.0)
         
@@ -491,7 +447,6 @@ async def post(ctx):
             await ctx.send("No attachment detected. Process aborted.")
             return
             
-        # Save Featured Image
         featured_attachment = msg.attachments[0]
         f_ext = featured_attachment.filename.split('.')[-1]
         featured_filename = f"featured-{slugify(title)}.{f_ext}"
@@ -500,7 +455,6 @@ async def post(ctx):
         
         await ctx.send("Featured image saved successfully.")
 
-        # --- STEP 5: IMAGE COUNT ---
         await ctx.send("Please enter the number of list items (media items) to include.")
         msg = await bot.wait_for('message', check=check, timeout=120.0)
         try:
@@ -509,7 +463,6 @@ async def post(ctx):
             await ctx.send("Invalid input. A numeric value is required. Process aborted.")
             return
 
-        # --- STEP 6: LOOP FOR CONTENT ---
         content_list = []
         
         for i in range(1, num_images + 1):
@@ -525,12 +478,10 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=60.0)
             source = msg.content
             
-            # ASK FOR SOURCE LINK
             await ctx.send("Please enter the **Link (URL)** for the source.")
             msg = await bot.wait_for('message', check=check, timeout=120.0)
             source_link = msg.content
 
-            # --- ASK MEDIA TYPE ---
             await ctx.send(f"Is Item {i} an **Image** or a **YouTube** video? (Type 'image' or 'youtube')")
             msg = await bot.wait_for('message', check=check, timeout=60.0)
             media_choice = msg.content.lower()
@@ -538,7 +489,6 @@ async def post(ctx):
             media_type = "image"
             media_content = ""
 
-            # --- Ask for Dimensions (Required for both types to set container size) ---
             await ctx.send(f"Please enter the **Width** for item {i} in pixels (e.g., 500).")
             msg = await bot.wait_for('message', check=check, timeout=60.0)
             try:
@@ -555,14 +505,12 @@ async def post(ctx):
                 await ctx.send("Invalid input. Defaulting height to 500.")
                 img_height = 500
 
-            # --- HANDLE MEDIA INPUT ---
             if "youtube" in media_choice:
                 media_type = "youtube"
                 await ctx.send(f"Please paste the **YouTube Link** for item {i}.")
                 msg = await bot.wait_for('message', check=check, timeout=120.0)
                 youtube_url = msg.content
                 
-                # Extract ID
                 vid_id = extract_youtube_id(youtube_url)
                 if vid_id:
                     media_content = vid_id
@@ -572,7 +520,6 @@ async def post(ctx):
                     media_content = "INVALID_ID"
 
             else:
-                # Default to Image Upload
                 media_type = "image"
                 await ctx.send(f"Please upload the **Image** for item {i}.")
                 msg = await bot.wait_for('message', check=check, timeout=120.0)
@@ -581,7 +528,6 @@ async def post(ctx):
                     await ctx.send("No attachment detected. Skipping this item.")
                     continue
 
-                # Save List Item Image
                 attachment = msg.attachments[0]
                 file_ext = attachment.filename.split('.')[-1]
                 safe_filename = f"{slugify(heading)}-{i}.{file_ext}"
@@ -589,15 +535,13 @@ async def post(ctx):
                 await attachment.save(save_path)
                 media_content = safe_filename
             
-            # Store Data
             content_list.append({
                 "heading": heading,
                 "text": text,
                 "source": source,
                 "source_link": source_link,
-                "media_type": media_type,     # 'image' or 'youtube'
-                "media_content": media_content, # filename or youtube_id
-                # Kept 'image' key for potential legacy compatibility, pointing to media_content
+                "media_type": media_type,
+                "media_content": media_content,
                 "image": media_content, 
                 "width": img_width,
                 "height": img_height
@@ -605,7 +549,6 @@ async def post(ctx):
             
             await ctx.send("Item saved.")
 
-        # --- STEP 7: UPDATE JSON ---
         current_year = datetime.now().year
         slug = slugify(title)
         
@@ -615,7 +558,6 @@ async def post(ctx):
         else:
             articles = []
 
-        # LOGIC TO TOGGLE FEATURED STATUS
         if is_featured:
             for art in articles:
                 if art.get('isFeatured', False):
@@ -646,10 +588,8 @@ async def post(ctx):
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(articles, f, indent=4)
 
-        # --- STEP 8: GENERATE HTML ---
         html_path = generate_html_file(new_article)
 
-        # --- DONE ---
         embed = discord.Embed(title="Article Published", color=discord.Color.blue())
         embed.add_field(name="Headline", value=title, inline=False)
         embed.add_field(name="Featured?", value=str(is_featured), inline=True)
@@ -661,6 +601,5 @@ async def post(ctx):
     except Exception as e:
         await ctx.send(f"An error occurred: {e}")
         print(e)
-        
-# Run Bot
-bot.run(TOKEN)
+
+bot.run(_bot_auth_)
