@@ -7,9 +7,13 @@ from datetime import datetime
 import re
 
 _bot_auth_ = "" 
+# Change this to your actual website domain
+SITE_URL = "https://theinternetarcade.com" 
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, 'data', 'articles.json')
 IMAGE_DIR = os.path.join(BASE_DIR, 'assets', 'media', 'image')
+SITEMAP_FILE = os.path.join(BASE_DIR, 'sitemap.xml')
 
 os.makedirs(IMAGE_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
@@ -29,7 +33,72 @@ def extract_youtube_id(url):
         return match.group(1)
     return None
 
+def update_sitemap():
+    """Generates a fresh sitemap.xml based on static pages and articles.json"""
+    # Define your static pages here
+    pages = [
+        {"loc": "/", "priority": "1.0", "changefreq": "daily"},
+        {"loc": "/quizzes.html", "priority": "0.8", "changefreq": "weekly"},
+        {"loc": "/contact.html", "priority": "0.5", "changefreq": "monthly"},
+    ]
+
+    # Load articles from the JSON database
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            articles = json.load(f)
+        for art in articles:
+            pages.append({
+                "loc": art['link'],
+                "lastmod": art['date'],
+                "priority": "0.7",
+                "changefreq": "monthly"
+            })
+
+    # Build the XML string
+    xml_lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ]
+
+    for page in pages:
+        xml_lines.append('  <url>')
+        xml_lines.append(f'    <loc>{SITE_URL}{page["loc"]}</loc>')
+        if 'lastmod' in page:
+            xml_lines.append(f'    <lastmod>{page["lastmod"]}</lastmod>')
+        xml_lines.append(f'    <changefreq>{page["changefreq"]}</changefreq>')
+        xml_lines.append(f'    <priority>{page["priority"]}</priority>')
+        xml_lines.append('  </url>')
+
+    xml_lines.append('</urlset>')
+
+    with open(SITEMAP_FILE, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(xml_lines))
+    
+    return SITEMAP_FILE
+
 def generate_html_file(article_data):
+    schema_json = json.dumps({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": article_data['title'],
+        "description": article_data['excerpt'],
+        "image": [f"{SITE_URL}/assets/media/image/{article_data['image']}"],
+        "datePublished": article_data['date'],
+        "author": [{
+            "@type": "Person",
+            "name": article_data['author'],
+            "url": SITE_URL
+        }],
+        "publisher": {
+            "@type": "Organization",
+            "name": "The Internet Arcade",
+            "logo": {
+                "@type": "ImageObject",
+                "url": f"{SITE_URL}/assets/media/image/logo-transparent-square.png"
+            }
+        }
+    }, indent=4)
+    
     quote_html = ""
     if article_data.get('quote'):
         author_html = ""
@@ -64,10 +133,10 @@ def generate_html_file(article_data):
     <meta name="description" content="{article_data['excerpt']}">
     <meta property="og:title" content="{article_data['title']}">
     <meta property="og:description" content="{article_data['excerpt']}">
+    <meta property="og:image" content="{SITE_URL}/assets/media/image/{article_data['image']}">
     <title>{article_data['title']} | The Internet Arcade</title>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/articles.css">
-    
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -81,7 +150,6 @@ def generate_html_file(article_data):
             </div>
             <div class="article-body">
                 <p>{article_data['excerpt']}</p>
-                
                 {quote_html}
     """
 
@@ -123,7 +191,6 @@ def generate_html_file(article_data):
 
     html += f"""
                 {authors_note_html}
-
                 <div class="back-container"><a href="/index.html" class="back-btn">⬅ Back Home</a></div>
             </div>
         </article>
@@ -191,7 +258,7 @@ async def post(ctx):
         msg = await bot.wait_for('message', check=check, timeout=600.0)
         is_featured = msg.content.lower() in ['yes', 'y']
 
-        await ctx.send("Please upload the **Featured Image** for the article thumbnail (to be stored in JSON).")
+        await ctx.send("Please upload the **Featured Image** for the article thumbnail.")
         msg = await bot.wait_for('message', check=check, timeout=1200.0)
         
         if not msg.attachments:
@@ -217,7 +284,7 @@ async def post(ctx):
         content_list = []
         
         for i in range(1, num_images + 1):
-            await ctx.send(f"--- **Item {i}** ---\nPlease enter the **Heading** for this item.")
+            await ctx.send(f"--- **Item {i}** ---\nPlease enter the **Heading**.")
             msg = await bot.wait_for('message', check=check, timeout=1200.0)
             heading = msg.content
 
@@ -225,7 +292,7 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=3000.0)
             text = msg.content
 
-            await ctx.send("Please enter the **Image Source Name** (e.g., 'NY Times' or 'John Doe').")
+            await ctx.send("Please enter the **Image Source Name**.")
             msg = await bot.wait_for('message', check=check, timeout=600.0)
             source = msg.content
             
@@ -233,52 +300,41 @@ async def post(ctx):
             msg = await bot.wait_for('message', check=check, timeout=1200.0)
             source_link = msg.content
 
-            await ctx.send(f"Is Item {i} an **Image** or a **YouTube** video? (Type 'image' or 'youtube')")
+            await ctx.send(f"Is Item {i} an **Image** or a **YouTube** video? (image/youtube)")
             msg = await bot.wait_for('message', check=check, timeout=600.0)
             media_choice = msg.content.lower()
             
             media_type = "image"
             media_content = ""
 
-            await ctx.send(f"Please enter the **Width** for item {i} in pixels (e.g., 500).")
+            await ctx.send(f"Please enter the **Width** (e.g., 500).")
             msg = await bot.wait_for('message', check=check, timeout=600.0)
             try:
                 img_width = int(msg.content)
             except ValueError:
-                await ctx.send("Invalid input. Defaulting width to 500.")
                 img_width = 500
 
-            await ctx.send(f"Please enter the **Height** for item {i} in pixels (e.g., 500).")
+            await ctx.send(f"Please enter the **Height** (e.g., 500).")
             msg = await bot.wait_for('message', check=check, timeout=600.0)
             try:
                 img_height = int(msg.content)
             except ValueError:
-                await ctx.send("Invalid input. Defaulting height to 500.")
                 img_height = 500
 
             if "youtube" in media_choice:
                 media_type = "youtube"
-                await ctx.send(f"Please paste the **YouTube Link** for item {i}.")
+                await ctx.send(f"Please paste the **YouTube Link**.")
                 msg = await bot.wait_for('message', check=check, timeout=1200.0)
                 youtube_url = msg.content
-                
                 vid_id = extract_youtube_id(youtube_url)
-                if vid_id:
-                    media_content = vid_id
-                    await ctx.send("YouTube video ID identified.")
-                else:
-                    await ctx.send("Could not identify YouTube ID. Item will be broken.")
-                    media_content = "INVALID_ID"
-
+                media_content = vid_id if vid_id else "INVALID_ID"
             else:
                 media_type = "image"
-                await ctx.send(f"Please upload the **Image** for item {i}.")
+                await ctx.send(f"Please upload the **Image**.")
                 msg = await bot.wait_for('message', check=check, timeout=1200.0)
-
                 if not msg.attachments:
-                    await ctx.send("No attachment detected. Skipping this item.")
+                    await ctx.send("No attachment detected. Skipping.")
                     continue
-
                 attachment = msg.attachments[0]
                 file_ext = attachment.filename.split('.')[-1]
                 safe_filename = f"{slugify(heading)}-{i}.{file_ext}"
@@ -297,7 +353,6 @@ async def post(ctx):
                 "width": img_width,
                 "height": img_height
             })
-            
             await ctx.send("Item saved.")
 
         current_year = datetime.now().year
@@ -314,9 +369,7 @@ async def post(ctx):
                 if art.get('isFeatured', False):
                     art['isFeatured'] = False
 
-        new_id = 1
-        if articles:
-            new_id = max(art['id'] for art in articles) + 1
+        new_id = max([art['id'] for art in articles] + [0]) + 1
 
         new_article = {
             "id": new_id,
@@ -335,20 +388,23 @@ async def post(ctx):
         }
 
         articles.append(new_article)
-
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(articles, f, indent=4)
 
         html_path = generate_html_file(new_article)
+        
+        # --- UPDATE SITEMAP ---
+        sitemap_path = update_sitemap()
 
         embed = discord.Embed(title="Article Published", color=discord.Color.blue())
         embed.add_field(name="Headline", value=title, inline=False)
         embed.add_field(name="Featured?", value=str(is_featured), inline=True)
-        embed.add_field(name="Output Path", value=f"`{html_path}`", inline=False)
+        embed.add_field(name="HTML Path", value=f"`{html_path}`", inline=False)
+        embed.add_field(name="Sitemap", value="`sitemap.xml` updated successfully!", inline=False)
         await ctx.send(embed=embed)
 
     except asyncio.TimeoutError:
-        await ctx.send("Operation timed out due to inactivity.")
+        await ctx.send("Operation timed out.")
     except Exception as e:
         await ctx.send(f"An error occurred: {e}")
         print(e)
